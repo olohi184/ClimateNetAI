@@ -123,6 +123,78 @@ st.markdown(
             font-size: 0.9rem;
             margin-top: 1rem;
         }
+    
+        /* ClimateNetAI immersive background */
+        .stApp {
+            background:
+                radial-gradient(circle at 88% 8%, rgba(14,165,233,0.22), transparent 30rem),
+                radial-gradient(circle at 12% 28%, rgba(16,185,129,0.13), transparent 27rem),
+                radial-gradient(circle at 72% 78%, rgba(99,102,241,0.13), transparent 32rem),
+                linear-gradient(135deg, #e8f5ff 0%, #eef7ff 38%, #eefcf8 70%, #edf2ff 100%) !important;
+            background-attachment: fixed !important;
+        }
+
+        [data-testid="stAppViewContainer"] > .main {
+            background: transparent !important;
+        }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #071a33 0%, #0b2a4a 52%, #0a3652 100%) !important;
+            border-right: 1px solid rgba(125,211,252,0.22) !important;
+        }
+
+        [data-testid="stSidebar"] * {
+            color: #eef8ff;
+        }
+
+        [data-testid="stSidebar"] input {
+            color: #0f172a !important;
+        }
+
+        [data-testid="stSidebar"] div[data-baseweb="input"] {
+            background: rgba(255,255,255,0.96) !important;
+            border-radius: 12px !important;
+        }
+
+        [data-testid="stSidebar"] hr {
+            border-color: rgba(255,255,255,0.16) !important;
+        }
+
+        /* Frosted research panels */
+        div[data-testid="stMetric"] {
+            background: rgba(255,255,255,0.84) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.78) !important;
+            box-shadow: 0 10px 28px rgba(15,64,105,0.08) !important;
+        }
+
+        div[data-testid="stDataFrame"] {
+            background: rgba(255,255,255,0.86) !important;
+            box-shadow: 0 10px 30px rgba(15,64,105,0.07);
+        }
+
+        .workflow-step {
+            background: rgba(255,255,255,0.86) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.82) !important;
+            box-shadow: 0 9px 24px rgba(15,64,105,0.08) !important;
+        }
+
+        /* Primary actions use ClimateNetAI blue rather than alarm red */
+        div[data-testid="stButton"] button[kind="primary"] {
+            background: linear-gradient(100deg, #0284c7 0%, #2563eb 55%, #4f46e5 100%) !important;
+            border: 0 !important;
+            color: white !important;
+            box-shadow: 0 9px 22px rgba(37,99,235,0.22) !important;
+        }
+
+        /* Keep destructive/degradation alerts controlled by Streamlit alert semantics. */
+        .block-container {
+            padding-top: 1.15rem !important;
+        }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -160,7 +232,7 @@ app_mode = st.sidebar.radio(
     ["RAC-5G Reliability Dashboard", "Legacy Monthly Model Explorer"],
     help=(
         "RAC-5G implements the reliability-aware framework developed from the "
-        "corrected 252-observation field dataset. The legacy explorer preserves "
+        "252-observation field dataset. The legacy explorer preserves "
         "the original monthly-model interface for reproducibility."
     ),
 )
@@ -389,7 +461,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
             health = "Warming up"
 
     h1, h2, h3, h4 = st.columns(4)
-    h1.metric("State", health)
+    health_display = "Awaiting" if health == "Awaiting telemetry" else health
+    h1.metric("State", health_display)
     h2.metric("Rolling MAE", "—" if np.isnan(rolling_mae) else f"{rolling_mae:.2f} dB")
     h3.metric("Rolling Coverage", "—" if np.isnan(rolling_cov) else f"{rolling_cov*100:.1f}%")
     h4.metric("Robust Error Threshold", f"{threshold:.2f} dB")
