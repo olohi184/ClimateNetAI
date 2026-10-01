@@ -396,10 +396,34 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.dataframe(telemetry_df, use_container_width=True, hide_index=True)
 
     st.subheader("4. Controlled Adaptation and Recovery Verification")
+
+    # Verify recovery from POST-ADAPTATION telemetry only.
+    post_mae = np.nan
+    post_cov = np.nan
+    post_health = "Awaiting post-adaptation telemetry"
+
+    if adaptation_completed and post_obs > 0:
+        post_df = telemetry_df.iloc[int(st.session_state.rac_adaptation_at):].copy()
+        post_recent = post_df.tail(int(window))
+        post_mae = float(post_recent["Absolute_Error_dB"].mean())
+        post_cov = float(post_recent["Interval_Covered"].mean())
+
+        if len(post_recent) < int(window):
+            post_health = "Warming up"
+        else:
+            post_error_fail = post_mae > threshold
+            post_coverage_fail = post_cov < coverage_floor
+            if post_error_fail and post_coverage_fail:
+                post_health = "Degraded"
+            elif post_error_fail or post_coverage_fail:
+                post_health = "Warning"
+            else:
+                post_health = "Stable"
+
     recovery_now = (
         adaptation_completed
         and post_obs >= int(window)
-        and health == "Stable"
+        and post_health == "Stable"
     )
     if recovery_now:
         st.session_state.rac_recovery_verified = True
@@ -431,15 +455,27 @@ if app_mode == "RAC-5G Reliability Dashboard":
             )
     elif recovery_verified:
         st.success(
-            f"Recovery status: VERIFIED. {post_obs} post-adaptation observations have been collected and the current {int(window)}-observation window is Stable."
+            f"Recovery status: VERIFIED. At least {int(window)} post-adaptation observations "
+            f"have been collected. Post-adaptation MAE = {post_mae:.2f} dB "
+            f"(threshold = {threshold:.2f} dB) and post-adaptation coverage = "
+            f"{post_cov*100:.1f}% (floor = {coverage_floor*100:.1f}%)."
         )
-    elif adaptation_completed and health == "Degraded":
+    elif adaptation_completed and post_obs >= int(window) and post_health == "Degraded":
         st.error(
-            "Recovery status: NOT VERIFIED. The adapted model remains Degraded; continue monitoring or escalate for further model review."
+            f"Recovery status: NOT VERIFIED. The post-adaptation window remains Degraded "
+            f"(MAE = {post_mae:.2f} dB; coverage = {post_cov*100:.1f}%). "
+            "Continue monitoring or escalate for further model review."
+        )
+    elif adaptation_completed and post_obs >= int(window) and post_health == "Warning":
+        st.warning(
+            f"Recovery status: NOT VERIFIED. The post-adaptation window remains in Warning "
+            f"(MAE = {post_mae:.2f} dB; coverage = {post_cov*100:.1f}%). "
+            "Continue monitoring before declaring recovery."
         )
     elif adaptation_completed:
         st.warning(
-            f"Recovery status: PENDING. {post_obs}/{int(window)} post-adaptation observations collected; adaptation alone is not proof of recovery."
+            f"Recovery status: PENDING. {post_obs}/{int(window)} post-adaptation observations "
+            "collected; adaptation alone is not proof of recovery."
         )
     else:
         st.info("Adaptation status: NOT REQUIRED. RAC-5G retains the current model while monitoring continues.")
@@ -1298,5 +1334,4 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
-
 
