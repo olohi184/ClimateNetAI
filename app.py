@@ -403,29 +403,27 @@ def fetch_open_meteo_current(latitude, longitude):
 
 
 def render_intel_cards(cards, columns=4):
-    """Render professional research-metric cards without changing RAC-5G state."""
+    """Render professional research-metric cards without Markdown code-block parsing."""
     grid_class = "four" if columns == 4 else "three"
     card_html = []
     for card in cards:
         tone = card.get("tone", "")
+        icon = card.get("icon", "•")
+        label = card["label"]
+        sub = card.get("sub", "")
+        value = card["value"]
         card_html.append(
-            f"""
-            <div class="intel-card {tone}">
-              <div class="intel-head">
-                <div class="intel-icon">{card.get("icon", "•")}</div>
-                <div>
-                  <div class="intel-label">{card["label"]}</div>
-                  <div class="intel-sub">{card.get("sub", "")}</div>
-                </div>
-              </div>
-              <div class="intel-value">{card["value"]}</div>
-            </div>
-            """
+            f'<div class="intel-card {tone}">'
+            f'<div class="intel-head">'
+            f'<div class="intel-icon">{icon}</div>'
+            f'<div><div class="intel-label">{label}</div>'
+            f'<div class="intel-sub">{sub}</div></div>'
+            f'</div>'
+            f'<div class="intel-value">{value}</div>'
+            f'</div>'
         )
-    st.markdown(
-        f'<div class="intel-grid {grid_class}">{"".join(card_html)}</div>',
-        unsafe_allow_html=True,
-    )
+    html = f'<div class="intel-grid {grid_class}">' + "".join(card_html) + '</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------
