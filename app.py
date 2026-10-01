@@ -1,4 +1,7 @@
 from pathlib import Path
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+import json
 
 import joblib
 import numpy as np
@@ -224,6 +227,68 @@ MODEL_NAMES = {
 
 
 # ------------------------------------------------------------
+# CLIMATENETAI V2.1 LIVE CLIMATE API
+# ------------------------------------------------------------
+
+OPEN_METEO_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def geocode_open_meteo(location_name):
+    """Resolve a place name to coordinates using Open-Meteo/GeoNames."""
+    params = urlencode({
+        "name": location_name.strip(),
+        "count": 5,
+        "language": "en",
+        "format": "json",
+    })
+    request = Request(
+        f"{OPEN_METEO_GEOCODING_URL}?{params}",
+        headers={"User-Agent": "ClimateNetAI/2.1"},
+    )
+    with urlopen(request, timeout=12) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    return payload.get("results", [])
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_open_meteo_current(latitude, longitude):
+    """Fetch current T/P/RH climate context from Open-Meteo."""
+    params = urlencode({
+        "latitude": latitude,
+        "longitude": longitude,
+        "current": "temperature_2m,relative_humidity_2m,surface_pressure",
+        "temperature_unit": "celsius",
+        "timezone": "auto",
+    })
+    request = Request(
+        f"{OPEN_METEO_FORECAST_URL}?{params}",
+        headers={"User-Agent": "ClimateNetAI/2.1"},
+    )
+    with urlopen(request, timeout=12) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+
+    current = payload.get("current", {})
+    required = ("temperature_2m", "relative_humidity_2m", "surface_pressure")
+    missing = [name for name in required if current.get(name) is None]
+    if missing:
+        raise ValueError(f"Open-Meteo response is missing: {', '.join(missing)}")
+
+    return {
+        "temperature": float(current["temperature_2m"]),
+        "pressure": float(current["surface_pressure"]),
+        "humidity": float(current["relative_humidity_2m"]),
+        "time": str(current.get("time", "")),
+        "interval_seconds": current.get("interval"),
+        "timezone": str(payload.get("timezone", "")),
+        "elevation": payload.get("elevation"),
+        "latitude": float(payload.get("latitude", latitude)),
+        "longitude": float(payload.get("longitude", longitude)),
+    }
+
+
+# ------------------------------------------------------------
 # CLIMATENETAI V2 NAVIGATION / RAC-5G IMPLEMENTATION
 # ------------------------------------------------------------
 
@@ -249,7 +314,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 Reliability-Aware Climate-Adaptive 5G Prediction Model
             </div>
             <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;font-size:.86rem;">
-                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.0 Research Prototype</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.1 · Live Climate API</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">252 Field Observations</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">Abuja, Nigeria</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">July 2024–June 2025</span>
@@ -350,10 +415,109 @@ if app_mode == "RAC-5G Reliability Dashboard":
 
     st.sidebar.divider()
     st.sidebar.subheader("RAC-5G Climate Context")
-    rac_temp = st.sidebar.number_input("Temperature (°C)", -20.0, 60.0, 30.0, 0.1, key="rac_temp")
-    rac_pressure = st.sidebar.number_input("Pressure (hPa)", 800.0, 1200.0, 1000.0, 0.1, key="rac_pressure")
-    rac_rh = st.sidebar.number_input("Relative Humidity (%)", 0.0, 100.0, 70.0, 0.1, key="rac_rh")
-    predict_rac = st.sidebar.button("🔮 Generate RAC-5G Prediction", type="primary", width="stretch")
+
+    climate_source = st.sidebar.radio(
+        "Climate Data Source",
+        ["Manual", "Live API"],
+        horizontal=True,
+        key="rac_climate_source",
+        help="Manual preserves the validated v2.0 workflow. Live API retrieves current climate context from Open-Meteo.",
+    )
+
+    api_context = None
+
+    if climate_source == "Manual":
+        rac_temp = st.sidebar.number_input(
+            "Temperature (°C)", -20.0, 60.0, 30.0, 0.1, key="rac_temp"
+        )
+        rac_pressure = st.sidebar.number_input(
+            "Pressure (hPa)", 800.0, 1200.0, 1000.0, 0.1, key="rac_pressure"
+        )
+        rac_rh = st.sidebar.number_input(
+            "Relative Humidity (%)", 0.0, 100.0, 70.0, 0.1, key="rac_rh"
+        )
+        st.sidebar.caption("Source: user-entered climate context.")
+
+    else:
+        api_location_query = st.sidebar.text_input(
+            "Location",
+            value="Abuja, Nigeria",
+            key="rac_api_location_query",
+            help="Enter a city or place. ClimateNetAI resolves it to coordinates before requesting current weather.",
+        )
+
+        if st.sidebar.button("🌦️ Fetch Live Climate", width="stretch", key="rac_fetch_climate"):
+            try:
+                with st.spinner("Connecting to Open-Meteo…"):
+                    matches = geocode_open_meteo(api_location_query)
+                    if not matches:
+                        raise ValueError(
+                            f"No location match was found for '{api_location_query}'."
+                        )
+
+                    # Use the best-ranked geocoding result.
+                    place = matches[0]
+                    live = fetch_open_meteo_current(
+                        float(place["latitude"]),
+                        float(place["longitude"]),
+                    )
+                    st.session_state.rac_live_climate = {
+                        **live,
+                        "name": str(place.get("name", api_location_query)),
+                        "admin1": str(place.get("admin1", "")),
+                        "country": str(place.get("country", "")),
+                    }
+                st.sidebar.success("API connected · climate context updated.")
+            except Exception as api_error:
+                st.sidebar.error(
+                    "Live climate retrieval failed. The validated Manual mode remains available."
+                )
+                st.sidebar.caption(f"API detail: {api_error}")
+
+        api_context = st.session_state.get("rac_live_climate")
+
+        if api_context:
+            rac_temp = float(api_context["temperature"])
+            rac_pressure = float(api_context["pressure"])
+            rac_rh = float(api_context["humidity"])
+
+            place_parts = [
+                api_context.get("name"),
+                api_context.get("admin1"),
+                api_context.get("country"),
+            ]
+            place_label = ", ".join(
+                str(part) for part in place_parts if part and str(part) != "nan"
+            )
+
+            st.sidebar.markdown("**🟢 API Connected**")
+            st.sidebar.metric("Temperature", f"{rac_temp:.1f} °C")
+            st.sidebar.metric("Surface pressure", f"{rac_pressure:.1f} hPa")
+            st.sidebar.metric("Relative humidity", f"{rac_rh:.1f}%")
+            st.sidebar.caption(
+                f"Open-Meteo · {place_label} · API time: "
+                f"{api_context.get('time', 'unavailable')} "
+                f"{api_context.get('timezone', '')}"
+            )
+            st.sidebar.caption(
+                "API climate context: 2 m air temperature, 2 m relative humidity, "
+                "and model-derived surface pressure. These are not the original field-station measurements."
+            )
+        else:
+            # Values are intentionally unavailable until a successful API fetch.
+            rac_temp = rac_pressure = rac_rh = None
+            st.sidebar.info(
+                "Enter a location and select **Fetch Live Climate**. "
+                "No API values are substituted silently."
+            )
+
+    predict_rac = st.sidebar.button(
+        "🔮 Generate RAC-5G Prediction",
+        type="primary",
+        width="stretch",
+        disabled=(climate_source == "Live API" and api_context is None),
+        key="rac_generate_prediction",
+    )
 
     if predict_rac:
         x_new = pd.DataFrame({
@@ -368,6 +532,15 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "temperature": rac_temp,
             "pressure": rac_pressure,
             "humidity": rac_rh,
+            "climate_source": climate_source,
+            "climate_location": (
+                st.session_state.get("rac_live_climate", {}).get("name", "")
+                if climate_source == "Live API" else ""
+            ),
+            "climate_api_time": (
+                st.session_state.get("rac_live_climate", {}).get("time", "")
+                if climate_source == "Live API" else ""
+            ),
             "prediction": pred,
             "lower": pred - FROZEN_HALF_WIDTH_DB,
             "upper": pred + FROZEN_HALF_WIDTH_DB,
@@ -421,6 +594,9 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 "Temperature_C": current["temperature"],
                 "Pressure_hPa": current["pressure"],
                 "Relative_Humidity_pct": current["humidity"],
+                "Climate_Source": current.get("climate_source", "Manual"),
+                "Climate_Location": current.get("climate_location", ""),
+                "Climate_API_Time": current.get("climate_api_time", ""),
                 "Predicted_RSSI_dBm": current["prediction"],
                 "Observed_RSSI_dBm": float(observed),
                 "Absolute_Error_dB": error,
@@ -615,10 +791,11 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.session_state.rac_prediction_id = 0
         st.session_state.rac_last_submitted_prediction_id = None
         st.session_state.rac_adaptation_at = None
+        st.session_state.pop("rac_live_climate", None)
         st.rerun()
 
     st.caption(
-        "RAC-5G V1 implementation: Climate Context → RSSI Prediction → Calibrated Uncertainty → "
+        "ClimateNetAI v2.1 · RAC-5G V1: Manual/Live API Climate Context → RSSI Prediction → Calibrated Uncertainty → "
         "Telemetry Feedback → Reliability Monitoring → Degradation Detection → Controlled Adaptation → "
         "Recovery Verification."
     )
