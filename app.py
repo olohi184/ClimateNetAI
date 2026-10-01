@@ -694,10 +694,21 @@ if app_mode == "RAC-5G Reliability Dashboard":
 
     current = st.session_state.rac_prediction
     if current is None:
-        st.write(
-            "Enter atmospheric conditions in the sidebar and generate a RAC-5G prediction. "
-            "The uncertainty interval uses the frozen Experiment 7 interval width."
-        )
+        if climate_source == "Manual":
+            st.write(
+                "Enter atmospheric conditions in the sidebar and generate a RAC-5G prediction. "
+                "The uncertainty interval uses the frozen Experiment 7 interval width."
+            )
+        elif api_context is not None:
+            st.write(
+                "Live atmospheric conditions have been retrieved from Open-Meteo and are ready "
+                "for RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
+            )
+        else:
+            st.write(
+                "Connect to Open-Meteo using the Live API controls in the sidebar to retrieve "
+                "atmospheric conditions for RAC-5G prediction."
+            )
     else:
         render_intel_cards([
             {"icon": "📶", "label": "Predicted RSSI", "sub": "Model output (dBm)", "value": f"{current['prediction']:.2f} dBm"},
@@ -1755,5 +1766,6 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
+
 
 
