@@ -49,7 +49,8 @@ st.markdown(
             padding: 1.4rem 1.6rem;
             border-radius: 18px;
             border: 1px solid rgba(128, 128, 128, 0.18);
-            background: rgba(245, 247, 250, 0.62);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
             margin-bottom: 1.5rem;
         }
 
@@ -76,7 +77,8 @@ st.markdown(
             border: 1px solid rgba(128, 128, 128, 0.16);
             border-radius: 16px;
             padding: 1.15rem 1.2rem;
-            background: rgba(250, 250, 250, 0.6);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 7px 20px rgba(15, 23, 42, 0.04);
             min-height: 118px;
         }
 
@@ -168,14 +170,34 @@ if app_mode == "RAC-5G Reliability Dashboard":
 
     st.markdown(
         """
-        <div class="hero-card">
-            <div class="hero-title">📡 ClimateNetAI v2.0 — RAC-5G</div>
-            <div class="hero-subtitle">
+        <div class="hero-card" style="background:linear-gradient(120deg,#0f172a,#172554,#075985);color:white;box-shadow:0 18px 45px rgba(15,23,42,.16);border:none;">
+            <div style="font-size:.78rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#7dd3fc;margin-bottom:.55rem;">CLIMATE-AWARE NETWORK INTELLIGENCE</div>
+            <div class="hero-title" style="color:white;">📡 ClimateNetAI <span style="color:#7dd3fc;">RAC-5G</span></div>
+            <div class="hero-subtitle" style="color:#dbeafe;">
                 Reliability-Aware Climate-Adaptive 5G Prediction Model
             </div>
-            <div style="margin-top:0.8rem;font-size:0.92rem;color:#6b7280;">
-                Research implementation • Corrected 252-observation field dataset • July 2024–June 2025
+            <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;font-size:.86rem;">
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.0 Research Prototype</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">252 Field Observations</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">Abuja, Nigeria</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">July 2024–June 2025</span>
             </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:.45rem;margin:.8rem 0 1.15rem;">
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">🌦️<br><b>Climate</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">📡<br><b>Predict</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">🎯<br><b>Uncertainty</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">📥<br><b>Observe</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">❤️<br><b>Monitor</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">⚠️<br><b>Detect</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">🔄<br><b>Adapt</b></div>
+          <div class="snapshot-card" style="min-height:0;padding:.65rem;text-align:center;">✅<br><b>Verify</b></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -279,7 +301,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "upper": pred + FROZEN_HALF_WIDTH_DB,
         }
 
-    st.subheader("1. Climate Context → RSSI Prediction → Uncertainty")
+    st.subheader("1. Prediction Intelligence — Climate → RSSI → Uncertainty")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Field observations", "252")
     k2.metric("Prediction Engine", "Ridge α = 1.0")
@@ -302,7 +324,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "but coverage varied strongly by month; the interval is therefore evidence, not a guarantee."
         )
 
-        st.subheader("2. Telemetry Feedback")
+        st.subheader("2. Live Telemetry Feedback")
         observed = st.number_input(
             "Observed RSSI after prediction (dBm)",
             min_value=-140.0,
@@ -335,7 +357,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
             st.session_state.rac_last_submitted_prediction_id = current["prediction_id"]
             st.success("Telemetry observation added. Generate a new prediction before submitting the next observation.")
 
-    st.subheader("3. Model-Health Monitoring and Degradation Detection")
+    st.subheader("3. Reliability Intelligence — Model Health & Degradation")
     d1, d2, d3 = st.columns(3)
     window = d1.selectbox("Monitoring window (w)", [3, 5, 7], index=1)
     lam = d2.selectbox("Threshold multiplier (λ)", [1.0, 1.5, 2.0, 2.5], index=1)
@@ -395,7 +417,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
     if not telemetry_df.empty:
         st.dataframe(telemetry_df, use_container_width=True, hide_index=True)
 
-    st.subheader("4. Controlled Adaptation and Recovery Verification")
+    st.subheader("4. Adaptive Response — Controlled Adaptation & Recovery")
 
     # Verify recovery from POST-ADAPTATION telemetry only.
     post_mae = np.nan
@@ -480,7 +502,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
     else:
         st.info("Adaptation status: NOT REQUIRED. RAC-5G retains the current model while monitoring continues.")
 
-    st.subheader("5. Frozen Experimental Evidence")
+    st.subheader("5. Validated Research Evidence")
     evidence = pd.DataFrame({
         "Evidence": [
             "Static Ridge baseline",
