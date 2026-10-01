@@ -163,13 +163,127 @@ st.markdown(
             border-color: rgba(255,255,255,0.16) !important;
         }
 
-        /* Frosted research panels */
-        div[data-testid="stMetric"] {
-            background: rgba(255,255,255,0.84) !important;
+        /* ClimateNetAI professional intelligence cards */
+        .intel-grid {
+            display: grid;
+            gap: 1rem;
+            margin: .45rem 0 1.05rem;
+        }
+        .intel-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .intel-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+        .intel-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 112px;
+            padding: 1rem 1.1rem;
+            border-radius: 17px;
+            border: 1px solid rgba(125, 211, 252, .42);
+            background: linear-gradient(135deg, rgba(239,248,255,.94), rgba(247,252,255,.78));
+            box-shadow: 0 10px 26px rgba(15,64,105,.08);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.78) !important;
-            box-shadow: 0 10px 28px rgba(15,64,105,0.08) !important;
+        }
+        .intel-card::after {
+            content: "";
+            position: absolute;
+            right: -30px;
+            bottom: -38px;
+            width: 125px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(56,189,248,.08);
+            transform: rotate(-12deg);
+        }
+        .intel-card.purple {
+            border-color: rgba(167,139,250,.38);
+            background: linear-gradient(135deg, rgba(245,243,255,.94), rgba(250,248,255,.80));
+        }
+        .intel-card.green {
+            border-color: rgba(74,222,128,.38);
+            background: linear-gradient(135deg, rgba(240,253,244,.94), rgba(247,254,249,.80));
+        }
+        .intel-card.orange {
+            border-color: rgba(251,146,60,.38);
+            background: linear-gradient(135deg, rgba(255,247,237,.95), rgba(255,251,245,.82));
+        }
+        .intel-card.red {
+            border-color: rgba(248,113,113,.38);
+            background: linear-gradient(135deg, rgba(254,242,242,.95), rgba(255,248,248,.82));
+        }
+        .intel-card.teal {
+            border-color: rgba(45,212,191,.38);
+            background: linear-gradient(135deg, rgba(240,253,250,.95), rgba(245,255,253,.82));
+        }
+        .intel-head {
+            display:flex;
+            align-items:center;
+            gap:.65rem;
+            margin-bottom:.45rem;
+        }
+        .intel-icon {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            background:rgba(37,99,235,.10);
+            font-size:1.25rem;
+            flex:0 0 38px;
+        }
+        .intel-label {
+            font-size:.92rem;
+            line-height:1.15;
+            font-weight:800;
+            color:#0f2747;
+        }
+        .intel-sub {
+            margin-top:.14rem;
+            font-size:.72rem;
+            line-height:1.2;
+            font-weight:600;
+            color:#6481a4;
+        }
+        .intel-value {
+            position:relative;
+            z-index:1;
+            margin-left:3.05rem;
+            font-size:1.78rem;
+            line-height:1.08;
+            font-weight:800;
+            letter-spacing:-.025em;
+            color:#0b3d82;
+            white-space:nowrap;
+        }
+        .intel-card.purple .intel-value { color:#4c1d95; }
+        .intel-card.green .intel-value { color:#166534; }
+        .intel-card.orange .intel-value { color:#9a3412; }
+        .intel-card.red .intel-value { color:#991b1b; }
+        .intel-card.teal .intel-value { color:#0f766e; }
+
+        /* Sidebar live climate values: remove pale metric tiles. */
+        [data-testid="stSidebar"] div[data-testid="stMetric"] {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            padding: .15rem 0 .4rem !important;
+        }
+        [data-testid="stSidebar"] div[data-testid="stMetric"] label,
+        [data-testid="stSidebar"] div[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+            color: #bae6fd !important;
+        }
+        [data-testid="stSidebar"] div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+            color: #ffffff !important;
+            font-weight: 800 !important;
+        }
+
+        @media (max-width: 1100px) {
+            .intel-grid.four, .intel-grid.three { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        }
+        @media (max-width: 700px) {
+            .intel-grid.four, .intel-grid.three { grid-template-columns: 1fr; }
+            .intel-value { font-size:1.55rem; }
         }
 
         div[data-testid="stDataFrame"] {
@@ -286,6 +400,32 @@ def fetch_open_meteo_current(latitude, longitude):
         "latitude": float(payload.get("latitude", latitude)),
         "longitude": float(payload.get("longitude", longitude)),
     }
+
+
+def render_intel_cards(cards, columns=4):
+    """Render professional research-metric cards without changing RAC-5G state."""
+    grid_class = "four" if columns == 4 else "three"
+    card_html = []
+    for card in cards:
+        tone = card.get("tone", "")
+        card_html.append(
+            f"""
+            <div class="intel-card {tone}">
+              <div class="intel-head">
+                <div class="intel-icon">{card.get("icon", "•")}</div>
+                <div>
+                  <div class="intel-label">{card["label"]}</div>
+                  <div class="intel-sub">{card.get("sub", "")}</div>
+                </div>
+              </div>
+              <div class="intel-value">{card["value"]}</div>
+            </div>
+            """
+        )
+    st.markdown(
+        f'<div class="intel-grid {grid_class}">{"".join(card_html)}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ------------------------------------------------------------
@@ -547,11 +687,12 @@ if app_mode == "RAC-5G Reliability Dashboard":
         }
 
     st.subheader("1. Prediction Intelligence — Climate → RSSI → Uncertainty")
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Field observations", "252")
-    k2.metric("Prediction Engine", "Ridge α = 1.0")
-    k3.metric("Nominal Interval", "90%")
-    k4.metric("Frozen Overall Coverage", "87.3%")
+    render_intel_cards([
+        {"icon": "🗄️", "label": "Field observations", "sub": "Total samples used", "value": "252"},
+        {"icon": "⚙️", "label": "Prediction Engine", "sub": "Model & regularization", "value": "Ridge α = 1.0", "tone": "purple"},
+        {"icon": "🛡️", "label": "Nominal Interval", "sub": "Prediction uncertainty", "value": "90%", "tone": "green"},
+        {"icon": "🎯", "label": "Frozen Overall Coverage", "sub": "Empirical coverage · Experiment 7", "value": "87.3%", "tone": "orange"},
+    ], columns=4)
 
     current = st.session_state.rac_prediction
     if current is None:
@@ -560,10 +701,11 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "The uncertainty interval uses the frozen Experiment 7 interval width."
         )
     else:
-        p1, p2, p3 = st.columns(3)
-        p1.metric("Predicted RSSI", f"{current['prediction']:.2f} dBm")
-        p2.metric("90% Lower Bound", f"{current['lower']:.2f} dBm")
-        p3.metric("90% Upper Bound", f"{current['upper']:.2f} dBm")
+        render_intel_cards([
+            {"icon": "📶", "label": "Predicted RSSI", "sub": "Model output (dBm)", "value": f"{current['prediction']:.2f} dBm"},
+            {"icon": "↓", "label": "90% Lower Bound", "sub": "Uncertainty interval (dBm)", "value": f"{current['lower']:.2f} dBm", "tone": "red"},
+            {"icon": "↑", "label": "90% Upper Bound", "sub": "Uncertainty interval (dBm)", "value": f"{current['upper']:.2f} dBm", "tone": "green"},
+        ], columns=3)
         st.caption(
             "The frozen uncertainty experiment achieved 87.3% overall empirical coverage, "
             "but coverage varied strongly by month; the interval is therefore evidence, not a guarantee."
@@ -636,12 +778,19 @@ if app_mode == "RAC-5G Reliability Dashboard":
         else:
             health = "Warming up"
 
-    h1, h2, h3, h4 = st.columns(4)
     health_display = "Awaiting" if health == "Awaiting telemetry" else health
-    h1.metric("State", health_display)
-    h2.metric("Rolling MAE", "—" if np.isnan(rolling_mae) else f"{rolling_mae:.2f} dB")
-    h3.metric("Rolling Coverage", "—" if np.isnan(rolling_cov) else f"{rolling_cov*100:.1f}%")
-    h4.metric("Robust Error Threshold", f"{threshold:.2f} dB")
+    health_tone = (
+        "red" if health == "Degraded"
+        else "orange" if health == "Warning"
+        else "green" if health == "Stable"
+        else "purple"
+    )
+    render_intel_cards([
+        {"icon": "〰️", "label": "State", "sub": "System status", "value": health_display, "tone": health_tone},
+        {"icon": "📈", "label": "Rolling MAE", "sub": "Recent prediction error", "value": "—" if np.isnan(rolling_mae) else f"{rolling_mae:.2f} dB"},
+        {"icon": "🛡️", "label": "Rolling Coverage", "sub": "Prediction reliability", "value": "—" if np.isnan(rolling_cov) else f"{rolling_cov*100:.1f}%", "tone": "green"},
+        {"icon": "!", "label": "Robust Error Threshold", "sub": "Degradation detection limit", "value": f"{threshold:.2f} dB", "tone": "orange"},
+    ], columns=4)
 
     st.caption(
         "The thesis sensitivity study tested w = 3–7 and λ = 1.0–2.5. "
@@ -653,15 +802,17 @@ if app_mode == "RAC-5G Reliability Dashboard":
         post_obs = 0
     else:
         post_obs = max(0, total_obs - int(st.session_state.rac_adaptation_at))
-    t1, t2, t3 = st.columns(3)
-    t1.metric("Telemetry observations", total_obs)
-    t2.metric("Post-adaptation observations", post_obs)
     adaptation_completed = (
         st.session_state.rac_adaptation_completed
         or st.session_state.rac_adaptation_at is not None
         or (not telemetry_df.empty and "Phase" in telemetry_df.columns and (telemetry_df["Phase"] == "Post-adaptation").any())
     )
-    t3.metric("Current phase", "Post-adaptation" if adaptation_completed else "Pre-adaptation")
+    current_phase = "Post-adaptation" if adaptation_completed else "Pre-adaptation"
+    render_intel_cards([
+        {"icon": "📡", "label": "Telemetry observations", "sub": "Network measurements received", "value": str(total_obs)},
+        {"icon": "☁️", "label": "Post-adaptation observations", "sub": "After controlled adaptation", "value": str(post_obs), "tone": "purple"},
+        {"icon": "▶", "label": "Current phase", "sub": "RAC-5G reliability workflow", "value": current_phase, "tone": "teal"},
+    ], columns=3)
 
     if not telemetry_df.empty:
         st.dataframe(telemetry_df, use_container_width=True, hide_index=True)
@@ -1606,4 +1757,5 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
+
 
