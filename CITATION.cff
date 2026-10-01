@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: "If you use ClimateNetAI in your research, please cite this software."
-title: "ClimateNetAI: Climate-Aware Machine Learning for Wireless Signal Prediction"
-version: 1.0.4
-doi: "10.5281/zenodo.22731906"
-date-released: "2026-09-13"
+
+title: "ClimateNetAI: Reliability-Aware Climate-Adaptive 5G Intelligence"
+version: 2.2.0
+date-released: "2026-10-01"
 type: software
 license: MIT
 
@@ -11,21 +11,30 @@ authors:
   - family-names: "Michael"
     given-names: "Olohimai Juliet"
 
-repository-code: "https://github.com/olohi184/ClimateNetAI"
+repository-code: "https://github.com/olohi184/-ClimateNetAI-"
 url: "https://climatenetai.streamlit.app"
 
 abstract: >
-  ClimateNetAI is a climate-aware machine-learning research application
-  for predicting wireless signal strength under atmospheric variability.
-  It integrates monthly machine-learning models, validation metrics,
-  model comparison and recommendation, reliability controls,
-  data-quality notices, performance visualization, and downloadable
-  prediction reports.
+  ClimateNetAI is a climate-aware and reliability-aware machine-learning
+  research platform for 5G signal-strength prediction under atmospheric
+  variability. Version 2.2 implements the RAC-5G
+  (Reliability-Aware Climate-Adaptive 5G) framework, integrating
+  climate-aware RSSI prediction, uncertainty quantification, live
+  atmospheric-data integration, network telemetry ingestion, rolling
+  reliability monitoring, degradation detection, controlled adaptation,
+  and post-adaptation recovery verification. The underlying research is
+  grounded in empirical 5G and atmospheric field measurements, while
+  the v2.2 telemetry workflow has been functionally validated using
+  controlled simulated 5G observations.
 
 keywords:
   - machine learning
+  - 5G
   - wireless communications
   - RSSI
   - climate-aware AI
-  - 5G
+  - trustworthy AI
+  - reliability-aware machine learning
+  - atmospheric variability
+  - adaptive systems
   - climate-resilient digital infrastructure
