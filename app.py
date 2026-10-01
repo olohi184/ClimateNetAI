@@ -341,7 +341,7 @@ MODEL_NAMES = {
 
 
 # ------------------------------------------------------------
-# CLIMATENETAI V2.1 LIVE CLIMATE API
+# CLIMATENETAI V2.2 LIVE CLIMATE + TELEMETRY BRIDGE
 # ------------------------------------------------------------
 
 OPEN_METEO_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -359,7 +359,7 @@ def geocode_open_meteo(location_name):
     })
     request = Request(
         f"{OPEN_METEO_GEOCODING_URL}?{params}",
-        headers={"User-Agent": "ClimateNetAI/2.1"},
+        headers={"User-Agent": "ClimateNetAI/2.2"},
     )
     with urlopen(request, timeout=12) as response:
         payload = json.loads(response.read().decode("utf-8"))
@@ -378,7 +378,7 @@ def fetch_open_meteo_current(latitude, longitude):
     })
     request = Request(
         f"{OPEN_METEO_FORECAST_URL}?{params}",
-        headers={"User-Agent": "ClimateNetAI/2.1"},
+        headers={"User-Agent": "ClimateNetAI/2.2"},
     )
     with urlopen(request, timeout=12) as response:
         payload = json.loads(response.read().decode("utf-8"))
@@ -400,6 +400,31 @@ def fetch_open_meteo_current(latitude, longitude):
         "latitude": float(payload.get("latitude", latitude)),
         "longitude": float(payload.get("longitude", longitude)),
     }
+
+
+def fetch_telemetry_bridge_latest(base_url):
+    """Fetch the latest independent network observation from Telemetry Bridge V1."""
+    base_url = str(base_url).strip().rstrip("/")
+    if not base_url.startswith(("http://", "https://")):
+        raise ValueError("Bridge URL must start with http:// or https://")
+    request = Request(
+        f"{base_url}/latest",
+        headers={"User-Agent": "ClimateNetAI/2.2"},
+    )
+    with urlopen(request, timeout=8) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+
+    if payload.get("rssi_dbm") is None:
+        raise ValueError("Bridge response does not contain rssi_dbm")
+    rssi = float(payload["rssi_dbm"])
+    if not -140.0 <= rssi <= -30.0:
+        raise ValueError("Bridge RSSI is outside the accepted -140 to -30 dBm range")
+
+    for key in ("rsrp_dbm", "rsrq_db", "sinr_db"):
+        if payload.get(key) is not None:
+            payload[key] = float(payload[key])
+    payload["rssi_dbm"] = rssi
+    return payload
 
 
 def render_intel_cards(cards, columns=4):
@@ -452,7 +477,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 Reliability-Aware Climate-Adaptive 5G Prediction Model
             </div>
             <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;font-size:.86rem;">
-                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.1 · Live Climate API</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.2 · Live Climate + Telemetry Bridge</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">252 Field Observations</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">Abuja, Nigeria</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">July 2024–June 2025</span>
@@ -551,6 +576,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.session_state.rac_adaptation_completed = False
     if "rac_recovery_verified" not in st.session_state:
         st.session_state.rac_recovery_verified = False
+    if "rac_bridge_telemetry" not in st.session_state:
+        st.session_state.rac_bridge_telemetry = None
 
     st.sidebar.divider()
     st.sidebar.subheader("RAC-5G Climate Context")
@@ -721,25 +748,90 @@ if app_mode == "RAC-5G Reliability Dashboard":
             {"icon": "↑", "label": "90% Upper Bound", "sub": "Uncertainty interval (dBm)", "value": f"{current['upper']:.2f} dBm", "tone": "green"},
         ], columns=3)
         st.caption(
-            "The frozen uncertainty experiment achieved 87.3% overall empirical coverage, "
+            "The validated 90% uncertainty interval achieved 87.3% overall empirical coverage, "
             "but coverage varied strongly by month; the interval is therefore evidence, not a guarantee."
         )
 
-        st.subheader("2. Live Telemetry Feedback")
-        observed = st.number_input(
-            "Observed RSSI after prediction (dBm)",
-            min_value=-140.0,
-            max_value=-30.0,
-            value=float(round(current["prediction"], 1)),
-            step=0.1,
-            key="rac_observed_rssi",
+        st.subheader("2. Live Network Telemetry")
+        telemetry_source = st.radio(
+            "Network Telemetry Source",
+            ["Manual", "Telemetry Bridge"],
+            horizontal=True,
+            key="rac_network_telemetry_source",
+            help="Manual preserves the validated workflow. Telemetry Bridge retrieves an independent network observation.",
         )
+
+        network_context = {}
+        observed = None
+
+        if telemetry_source == "Manual":
+            observed = st.number_input(
+                "Observed RSSI after prediction (dBm)",
+                min_value=-140.0,
+                max_value=-30.0,
+                value=float(round(current["prediction"], 1)),
+                step=0.1,
+                key="rac_observed_rssi",
+            )
+            network_context = {"source": "Manual", "operator": "", "network_type": "", "timestamp": "",
+                               "rsrp_dbm": None, "rsrq_db": None, "sinr_db": None, "cell_id": None}
+            st.caption("Source: user-entered network observation.")
+        else:
+            bridge_url = st.text_input(
+                "Telemetry Bridge URL",
+                value="http://127.0.0.1:8765",
+                key="rac_bridge_url",
+                help="For a deployed Streamlit app, use a reachable HTTPS bridge URL. localhost is only for local testing.",
+            )
+            if st.button("📡 Fetch Latest Network Telemetry", width="stretch", key="rac_fetch_bridge_telemetry"):
+                try:
+                    with st.spinner("Connecting to Telemetry Bridge…"):
+                        st.session_state.rac_bridge_telemetry = fetch_telemetry_bridge_latest(bridge_url)
+                    st.success("Telemetry Bridge connected · latest network observation retrieved.")
+                except Exception as bridge_error:
+                    st.session_state.rac_bridge_telemetry = None
+                    st.error("Telemetry Bridge retrieval failed. Manual telemetry remains available.")
+                    st.caption(f"Bridge detail: {bridge_error}")
+
+            bridge_data = st.session_state.get("rac_bridge_telemetry")
+            if bridge_data:
+                observed = float(bridge_data["rssi_dbm"])
+                network_context = bridge_data
+                b1, b2, b3, b4 = st.columns(4)
+                b1.metric("Observed RSSI", f"{observed:.1f} dBm")
+                b2.metric("Operator", str(bridge_data.get("operator") or "Unknown"))
+                b3.metric("Network", str(bridge_data.get("network_type") or "Unknown"))
+                source_raw = str(bridge_data.get("source") or "Telemetry Bridge")
+                source_display = (
+                    "ClimateNetAI Bridge"
+                    if source_raw == "ClimateNetAI Telemetry Simulator"
+                    else source_raw
+                )
+                b4.metric("Source", source_display)
+                optional = []
+                if bridge_data.get("rsrp_dbm") is not None:
+                    optional.append(f"RSRP {bridge_data['rsrp_dbm']:.1f} dBm")
+                if bridge_data.get("rsrq_db") is not None:
+                    optional.append(f"RSRQ {bridge_data['rsrq_db']:.1f} dB")
+                if bridge_data.get("sinr_db") is not None:
+                    optional.append(f"SINR {bridge_data['sinr_db']:.1f} dB")
+                detail = " · ".join(optional) if optional else "Optional RSRP/RSRQ/SINR not supplied"
+                st.caption(f"{detail} · Measurement time: {bridge_data.get('timestamp', 'unavailable')}")
+                st.caption("RAC-5G V1 evaluates RSSI only. Additional radio metrics are retained as telemetry context and are not converted into RSSI.")
+            else:
+                st.info("Connect to the Telemetry Bridge and fetch a measurement before submitting network telemetry.")
+
         already_submitted = (
             st.session_state.rac_last_submitted_prediction_id == current["prediction_id"]
         )
         if already_submitted:
             st.info("Telemetry for this prediction has already been submitted. Generate a new prediction before adding another observation.")
-        elif st.button("📥 Submit Observed RSSI", width="stretch"):
+        elif st.button(
+            "📥 Submit Network Telemetry",
+            width="stretch",
+            disabled=(observed is None),
+            key="rac_submit_network_telemetry",
+        ):
             error = abs(float(observed) - current["prediction"])
             covered = int(current["lower"] <= float(observed) <= current["upper"])
             adaptation_active = st.session_state.rac_adaptation_completed or st.session_state.rac_adaptation_at is not None
@@ -753,13 +845,23 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 "Climate_Source": current.get("climate_source", "Manual"),
                 "Climate_Location": current.get("climate_location", ""),
                 "Climate_API_Time": current.get("climate_api_time", ""),
+                "Network_Source": str(network_context.get("source", telemetry_source)),
+                "Network_Operator": str(network_context.get("operator", "")),
+                "Network_Type": str(network_context.get("network_type", "")),
+                "Network_Measurement_Time": str(network_context.get("timestamp", "")),
+                "Cell_ID": network_context.get("cell_id"),
+                "RSRP_dBm": network_context.get("rsrp_dbm"),
+                "RSRQ_dB": network_context.get("rsrq_db"),
+                "SINR_dB": network_context.get("sinr_db"),
                 "Predicted_RSSI_dBm": current["prediction"],
                 "Observed_RSSI_dBm": float(observed),
                 "Absolute_Error_dB": error,
                 "Interval_Covered": covered,
             })
             st.session_state.rac_last_submitted_prediction_id = current["prediction_id"]
-            st.success("Telemetry observation added. Generate a new prediction before submitting the next observation.")
+            if telemetry_source == "Telemetry Bridge":
+                st.session_state.rac_bridge_telemetry = None
+            st.success("Network telemetry observation added. Generate a new prediction before submitting the next observation.")
 
     st.subheader("3. Reliability Intelligence — Model Health & Degradation")
     d1, d2, d3 = st.columns(3)
@@ -953,11 +1055,12 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.session_state.rac_last_submitted_prediction_id = None
         st.session_state.rac_adaptation_at = None
         st.session_state.pop("rac_live_climate", None)
+        st.session_state.pop("rac_bridge_telemetry", None)
         st.rerun()
 
     st.caption(
-        "ClimateNetAI v2.1 · RAC-5G V1: Manual/Live API Climate Context → RSSI Prediction → Calibrated Uncertainty → "
-        "Telemetry Feedback → Reliability Monitoring → Degradation Detection → Controlled Adaptation → "
+        "ClimateNetAI v2.2 · RAC-5G V1: Manual/Live API Climate Context → RSSI Prediction → Calibrated Uncertainty → "
+        "Manual/Bridge Network Telemetry → Reliability Monitoring → Degradation Detection → Controlled Adaptation → "
         "Recovery Verification."
     )
     st.stop()
