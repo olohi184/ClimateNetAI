@@ -693,22 +693,26 @@ if app_mode == "RAC-5G Reliability Dashboard":
     ], columns=4)
 
     current = st.session_state.rac_prediction
+
+    # Always show climate-source guidance, even when a prediction already exists.
+    if climate_source == "Manual":
+        st.info(
+            "Manual climate mode is active. Enter atmospheric conditions in the sidebar and "
+            "generate a RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
+        )
+    elif api_context is not None:
+        st.success(
+            "Live atmospheric conditions have been retrieved from Open-Meteo and are ready "
+            "for RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
+        )
+    else:
+        st.info(
+            "Live API mode is active. Use the Open-Meteo controls in the sidebar to retrieve "
+            "atmospheric conditions for RAC-5G prediction."
+        )
+
     if current is None:
-        if climate_source == "Manual":
-            st.write(
-                "Enter atmospheric conditions in the sidebar and generate a RAC-5G prediction. "
-                "The uncertainty interval uses the frozen Experiment 7 interval width."
-            )
-        elif api_context is not None:
-            st.write(
-                "Live atmospheric conditions have been retrieved from Open-Meteo and are ready "
-                "for RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
-            )
-        else:
-            st.write(
-                "Connect to Open-Meteo using the Live API controls in the sidebar to retrieve "
-                "atmospheric conditions for RAC-5G prediction."
-            )
+        pass
     else:
         render_intel_cards([
             {"icon": "📶", "label": "Predicted RSSI", "sub": "Model output (dBm)", "value": f"{current['prediction']:.2f} dBm"},
@@ -1766,6 +1770,5 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
-
 
 
