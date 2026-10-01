@@ -690,7 +690,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
         {"icon": "🗄️", "label": "Field observations", "sub": "Total samples used", "value": "252"},
         {"icon": "⚙️", "label": "Prediction Engine", "sub": "Model & regularization", "value": "Ridge α = 1.0", "tone": "purple"},
         {"icon": "🛡️", "label": "Nominal Interval", "sub": "Prediction uncertainty", "value": "90%", "tone": "green"},
-        {"icon": "🎯", "label": "Frozen Overall Coverage", "sub": "Validated empirical coverage", "value": "87.3%", "tone": "orange"},
+        {"icon": "🎯", "label": "Validated Coverage", "sub": "Empirical model coverage", "value": "87.3%", "tone": "orange"},
     ], columns=4)
 
     current = st.session_state.rac_prediction
@@ -929,8 +929,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
     })
     st.dataframe(evidence, use_container_width=True, hide_index=True)
     st.warning(
-        "Do not interpret the January 65.9% reduction as a universal RAC-5G accuracy improvement. "
-        "It is a case-specific recovery result from one severe degradation event."
+        "Adaptation outcomes depend on network and environmental conditions and are evaluated "
+        "using post-adaptation telemetry."
     )
 
     if not telemetry_df.empty:
@@ -1767,3 +1767,4 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
+
