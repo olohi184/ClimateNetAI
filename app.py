@@ -249,6 +249,10 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.session_state.rac_last_submitted_prediction_id = None
     if "rac_adaptation_at" not in st.session_state:
         st.session_state.rac_adaptation_at = None
+    if "rac_adaptation_completed" not in st.session_state:
+        st.session_state.rac_adaptation_completed = False
+    if "rac_recovery_verified" not in st.session_state:
+        st.session_state.rac_recovery_verified = False
 
     st.sidebar.divider()
     st.sidebar.subheader("RAC-5G Climate Context")
@@ -315,7 +319,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
         elif st.button("📥 Submit Observed RSSI", width="stretch"):
             error = abs(float(observed) - current["prediction"])
             covered = int(current["lower"] <= float(observed) <= current["upper"])
-            phase = "Post-adaptation" if st.session_state.rac_adapted else "Pre-adaptation"
+            adaptation_active = st.session_state.rac_adaptation_completed or st.session_state.rac_adaptation_at is not None
+            phase = "Post-adaptation" if adaptation_active else "Pre-adaptation"
             st.session_state.rac_telemetry.append({
                 "Prediction_ID": current["prediction_id"],
                 "Phase": phase,
@@ -380,19 +385,27 @@ if app_mode == "RAC-5G Reliability Dashboard":
     t1, t2, t3 = st.columns(3)
     t1.metric("Telemetry observations", total_obs)
     t2.metric("Post-adaptation observations", post_obs)
-    t3.metric("Current phase", "Post-adaptation" if st.session_state.rac_adapted else "Pre-adaptation")
+    adaptation_completed = (
+        st.session_state.rac_adaptation_completed
+        or st.session_state.rac_adaptation_at is not None
+        or (not telemetry_df.empty and "Phase" in telemetry_df.columns and (telemetry_df["Phase"] == "Post-adaptation").any())
+    )
+    t3.metric("Current phase", "Post-adaptation" if adaptation_completed else "Pre-adaptation")
 
     if not telemetry_df.empty:
         st.dataframe(telemetry_df, use_container_width=True, hide_index=True)
 
     st.subheader("4. Controlled Adaptation and Recovery Verification")
-    recovery_verified = (
-        st.session_state.rac_adapted
+    recovery_now = (
+        adaptation_completed
         and post_obs >= int(window)
         and health == "Stable"
     )
+    if recovery_now:
+        st.session_state.rac_recovery_verified = True
+    recovery_verified = st.session_state.rac_recovery_verified
 
-    if health == "Degraded" and not st.session_state.rac_adapted:
+    if health == "Degraded" and not adaptation_completed:
         st.error("RAC-5G has detected sustained reliability degradation.")
         if st.button("🔄 Trigger Controlled Adaptation", type="primary", width="stretch"):
             new_rows = telemetry_df.rename(columns={
@@ -409,6 +422,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
             adapted_model.fit(adapted_train[rac_features], adapted_train["RSSI_dBm"])
             st.session_state.rac_model = adapted_model
             st.session_state.rac_adapted = True
+            st.session_state.rac_adaptation_completed = True
+            st.session_state.rac_recovery_verified = False
             st.session_state.rac_adaptation_at = len(st.session_state.rac_telemetry)
             st.session_state.rac_prediction = None
             st.success(
@@ -418,11 +433,11 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.success(
             f"Recovery status: VERIFIED. {post_obs} post-adaptation observations have been collected and the current {int(window)}-observation window is Stable."
         )
-    elif st.session_state.rac_adapted and health == "Degraded":
+    elif adaptation_completed and health == "Degraded":
         st.error(
             "Recovery status: NOT VERIFIED. The adapted model remains Degraded; continue monitoring or escalate for further model review."
         )
-    elif st.session_state.rac_adapted:
+    elif adaptation_completed:
         st.warning(
             f"Recovery status: PENDING. {post_obs}/{int(window)} post-adaptation observations collected; adaptation alone is not proof of recovery."
         )
@@ -464,6 +479,8 @@ if app_mode == "RAC-5G Reliability Dashboard":
         st.session_state.rac_telemetry = []
         st.session_state.rac_prediction = None
         st.session_state.rac_adapted = False
+        st.session_state.rac_adaptation_completed = False
+        st.session_state.rac_recovery_verified = False
         st.session_state.rac_prediction_id = 0
         st.session_state.rac_last_submitted_prediction_id = None
         st.session_state.rac_adaptation_at = None
@@ -1281,4 +1298,5 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
+
 
