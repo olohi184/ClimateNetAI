@@ -1,3 +1,6 @@
+cff-version: 1.2.0
+message: "If you use ClimateNetAI in your research, please cite this software."
+
 title: "ClimateNetAI: Reliability-Aware Climate-Adaptive 5G Intelligence"
 version: 2.2.0
 doi: "10.5281/zenodo.23091832"
