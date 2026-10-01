@@ -1,195 +1,403 @@
 # ClimateNetAI
 
-**Climate-Aware Machine Learning for Wireless Signal Prediction**
+## Reliability-Aware Climate-Adaptive 5G Intelligence
 
-[![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)]("https://github.com/olohi184/ClimateNetAI")
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Research Software](https://img.shields.io/badge/status-research%20prototype-orange.svg)](https://climatenetai.streamlit.app)
+![Version](https://img.shields.io/badge/version-2.2-blue)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![Status](https://img.shields.io/badge/status-research%20prototype-orange)
 
 **Founder, Project Originator and Lead Developer:** Olohimai Juliet Michael  
-**Current Version:** 1.0.4
+**Current Version:** 2.2  
 **Status:** Research Prototype
 
 ---
 
 ## Live Application
 
-ClimateNetAI v1.0.4 is publicly available at:
+ClimateNetAI is publicly accessible at:
 
-**https://climatenetai.streamlit.app**
+https://climatenetai.streamlit.app
 
-ClimateNetAI is a climate-aware machine-learning research application for predicting wireless signal strength under atmospheric variability.
+ClimateNetAI is a climate-aware and reliability-aware machine-learning
+research platform for investigating and predicting 5G Received Signal
+Strength Indicator (RSSI) under atmospheric variability.
 
-The project investigates how environmental conditions influence wireless signal behaviour and demonstrates how machine-learning models can support the analysis and prediction of Received Signal Strength Indicator (RSSI).
-
----
-
-## Research Status
-
-ClimateNetAI is an evolving research software platform informed by ongoing doctoral research in Systems Engineering.
-
-The project is intended for research, experimentation, reproducibility, education, and continued development of climate-aware machine-learning approaches for wireless signal prediction and resilient digital infrastructure.
-
-ClimateNetAI is not a production telecommunications network-management system, and its predictions should be interpreted alongside validation results, dataset limitations, and documented research assumptions.
----
-
-## Purpose
-
-ClimateNetAI investigates how atmospheric and temporal conditions relate to wireless signal behaviour and provides model-based RSSI predictions.
-
-The project supports research into:
-
-- climate-aware wireless communication;
-- climate-resilient digital connectivity;
-- machine-learning-assisted network analysis;
-- model robustness and generalization under environmental variability;
-- transparent evaluation of predictive models; and
-- responsible and trustworthy application of machine learning to digital infrastructure.
+Version 2.2 implements the **RAC-5G (Reliability-Aware Climate-Adaptive
+5G) framework**, extending static signal prediction into a workflow that
+combines climate context, uncertainty quantification, network observation,
+reliability monitoring, degradation detection, controlled adaptation,
+and post-adaptation recovery verification.
 
 ---
 
-## Research Context
+## ClimateNetAI v2.2
 
-ClimateNetAI is informed by ongoing doctoral research undertaken by **Olohimai Juliet Michael** in Systems Engineering at the **African University of Science and Technology (AUST), Abuja, Nigeria**.
+ClimateNetAI v2.2 represents a research-to-software translation of
+doctoral research investigating machine-learning prediction of 5G signal
+behaviour under atmospheric variability.
 
-The broader research investigates machine-learning-based prediction of wireless signal behaviour under atmospheric variability.
+The current system follows the operational workflow:
 
-ClimateNetAI translates aspects of this research into an interactive research-software environment through which environmental conditions, trained machine-learning models, validation results, and RSSI predictions can be explored.
+**Climate → Predict → Quantify Uncertainty → Observe → Monitor → Detect → Adapt → Verify**
+
+The platform currently provides:
+
+- climate-aware 5G RSSI prediction;
+- live atmospheric-data integration;
+- manual atmospheric-input fallback;
+- prediction uncertainty intervals;
+- a network telemetry bridge;
+- rolling prediction-error monitoring;
+- empirical interval-coverage monitoring;
+- reliability-state classification;
+- sustained degradation detection;
+- controlled model adaptation; and
+- post-adaptation recovery verification.
 
 ---
 
-## Input Variables
+## RAC-5G Framework
 
-ClimateNetAI currently supports the following prediction inputs:
+**RAC-5G** stands for:
+
+**Reliability-Aware Climate-Adaptive 5G Prediction Model**
+
+RAC-5G is the reliability-aware framework implemented within ClimateNetAI.
+
+The current V1 prediction engine uses a regularized linear model with
+atmospheric predictors:
 
 - Temperature
 - Atmospheric Pressure
 - Relative Humidity
-- Month
-
-Depending on the trained monthly model, either three or four features may be used internally.
-
----
-
-## Target Variable
 
 The prediction target is:
 
-**RSSI — Received Signal Strength Indicator (dBm)**
+- Received Signal Strength Indicator (RSSI)
+
+RAC-5G is not presented as a new regression algorithm. Its contribution
+is the integration of prediction, uncertainty, reliability monitoring,
+degradation detection, controlled adaptation, and recovery verification
+within a climate-aware 5G research workflow.
 
 ---
 
-## Machine-Learning Models
+## Empirical Research Foundation
 
-ClimateNetAI v1.0.3 supports:
+The RAC-5G implementation is grounded in an empirical 5G and atmospheric
+field experiment conducted in Abuja, Nigeria.
 
-- Linear Regression
-- Decision Tree
-- Random Forest
-- XGBoost
+The primary study dataset covers:
 
-Model availability may vary by month where validation or reliability checks indicate that a model should not be exposed for prediction.
+**July 2024 – June 2025**
 
----
+and contains:
 
-## Application Features
+**252 field observations**
 
-ClimateNetAI v1.0.4 includes:
+The research dataset contains atmospheric variables and wireless-network
+measurements collected during the study period.
 
-- monthly RSSI prediction;
-- signal-quality classification;
-- practical prediction interpretation;
-- MAE, RMSE, and R² validation metrics;
-- model reliability notices;
-- monthly best-model recommendation;
-- side-by-side comparison of monthly models;
-- monthly R² performance-trend visualization;
-- research and data-quality notes;
-- downloadable prediction reports; and
-- month-aware model availability controls.
+Core variables used by the current RAC-5G prediction engine are:
 
----
+- Temperature (°C)
+- Atmospheric Pressure (hPa)
+- Relative Humidity (%)
+- RSSI (dBm)
 
-## Model Validation
+Additional network measurements collected during the broader research
+include signal and network-performance variables such as RSRP, ping,
+download speed, and upload speed.
 
-ClimateNetAI reports:
-
-- **Mean Absolute Error (MAE)**
-- **Root Mean Squared Error (RMSE)**
-- **Coefficient of Determination (R²)**
-
-Model recommendations are based primarily on validation R² while MAE and RMSE are also displayed to provide additional context.
-
-A negative validation R² does not mean that the application failed to generate a prediction. It indicates poor out-of-sample generalization relative to predicting the validation-set mean.
-
-The application therefore distinguishes between the ability of a model to produce a numerical prediction and evidence that the model generalizes reliably.
+The empirical field dataset and the telemetry used for software
+functional validation should not be interpreted as the same source of
+evidence.
 
 ---
 
-## Research and Data-Quality Notes
+## Live Climate API Integration
 
-### June and July
+ClimateNetAI supports live atmospheric context through integration with
+the **Open-Meteo API**.
 
-The current modelling dataset contains identical Temperature, Pressure, Relative Humidity, and RSSI observations for June and July.
+The live climate pathway retrieves current:
 
-These months should therefore **not be treated as independent monthly evidence** until the original source data has been verified.
+- Temperature
+- Relative Humidity
+- Surface Pressure
 
-### September
+These variables can be supplied to the RAC-5G prediction engine as the
+environmental context for generating a current RSSI prediction.
 
-September contains 8 observations in the current modelling dataset.
+Conceptually:
 
-Its MAE, RMSE, and R² values were reconstructed using **Leave-One-Out Cross Validation (LOOCV)** with:
+**Open-Meteo → ClimateNetAI → RAC-5G Prediction**
 
-- Temperature;
-- Pressure;
-- Relative Humidity; and
-- Month Number.
+ClimateNetAI also retains a **Manual Climate Input** mode.
 
-These limitations are retained explicitly in ClimateNetAI to support transparent interpretation of the research results.
+Manual mode provides an explicit fallback when external API or network
+services are unavailable and also supports controlled research testing.
+
+The system does not intentionally replace unavailable API observations
+with hidden synthetic climate values.
 
 ---
 
-## Repository Structure
+## Prediction Uncertainty
 
-The core repository is organized approximately as follows:
+ClimateNetAI does not present RSSI predictions solely as point estimates.
+
+The RAC-5G interface provides:
+
+- Predicted RSSI
+- Lower uncertainty bound
+- Upper uncertainty bound
+
+The current V1 implementation uses a frozen empirical uncertainty interval
+derived from the research validation workflow.
+
+The nominal interval coverage is:
+
+**90%**
+
+with a frozen full interval width of approximately:
+
+**20.22 dB**
+
+The uncertainty interval is intended to communicate predictive uncertainty
+and support subsequent reliability monitoring.
+
+---
+
+## Network Telemetry Bridge
+
+ClimateNetAI v2.2 introduces a **Telemetry Bridge** that allows network
+observations to be supplied independently to the application.
+
+Conceptually:
+
+**Network Measurement Source → Telemetry Bridge → ClimateNetAI → RAC-5G Reliability Monitoring**
+
+The bridge can provide:
+
+- Observed RSSI
+- Operator
+- Network type
+- Measurement timestamp
+- Optional RSRP
+- Optional RSRQ
+- Optional SINR
+- Source/provenance information
+
+The current RAC-5G V1 reliability workflow evaluates **RSSI** as the
+primary observed prediction target.
+
+Additional radio measurements are retained as contextual telemetry and
+provide a pathway for future extensions.
+
+---
+
+## Reliability Monitoring
+
+After a prediction has been generated, an observed RSSI measurement can
+be compared with the predicted value.
+
+ClimateNetAI monitors recent prediction performance using a rolling
+window.
+
+The principal reliability indicators are:
+
+- Rolling Mean Absolute Error (MAE)
+- Empirical Prediction-Interval Coverage
+
+The system classifies operational reliability states such as:
+
+- Warming up
+- Stable
+- Warning
+- Degraded
+
+A reliability threshold is derived from historical prediction-error
+behaviour using a robust median/MAD-based formulation.
+
+The current default rolling monitoring window is:
+
+**5 observations**
+
+---
+
+## Degradation Detection
+
+RAC-5G does not trigger adaptation simply because a new observation
+arrives.
+
+Instead, ClimateNetAI evaluates whether recent prediction behaviour
+indicates sustained reliability degradation.
+
+This design separates:
+
+**observation**
+
+from
+
+**adaptation**
+
+and allows model updates to be triggered by evidence of degraded
+reliability rather than by continuous retraining.
+
+---
+
+## Controlled Adaptation
+
+When the reliability state satisfies the degradation criterion,
+ClimateNetAI can enable controlled adaptation.
+
+The adaptation process incorporates available telemetry observations
+into the model-update workflow while retaining the empirical historical
+training data.
+
+Adaptation is therefore treated as a controlled response to detected
+reliability degradation.
+
+Importantly, completing adaptation does **not** automatically mean that
+the system has recovered.
+
+---
+
+## Recovery Verification
+
+Following adaptation, ClimateNetAI requires new post-adaptation
+observations.
+
+Recovery is evaluated only using the post-adaptation monitoring period.
+
+The system requires sufficient post-adaptation evidence before declaring
+recovery.
+
+This implements the principle:
+
+**Adaptation ≠ Recovery**
+
+Instead:
+
+**Adaptation → New Observations → Reliability Re-evaluation → Recovery Verification**
+
+---
+
+## Controlled Functional Validation of v2.2
+
+The ClimateNetAI v2.2 telemetry and reliability workflow was functionally
+tested using controlled simulated 5G observations supplied through the
+Telemetry Bridge.
+
+The validation sequence exercised:
+
+**Stable Operation → Induced Degradation → Controlled Adaptation → Post-Adaptation Recovery**
+
+During the stable phase, five controlled observations produced:
+
+- Rolling MAE: approximately **0.40 dB**
+- Rolling interval coverage: **100%**
+- Reliability state: **Stable**
+
+A sequence of deliberately degraded RSSI observations was subsequently
+introduced to test degradation detection.
+
+ClimateNetAI detected sustained reliability degradation and enabled the
+controlled-adaptation pathway.
+
+Adaptation was triggered once.
+
+The system did not immediately declare recovery.
+
+Five new post-adaptation observations were then supplied.
+
+The final post-adaptation evaluation produced:
+
+- Post-adaptation observations: **5**
+- Post-adaptation MAE: **0.23 dB**
+- Post-adaptation interval coverage: **100%**
+- Reliability state: **Stable**
+- Recovery status: **VERIFIED**
+
+These values describe the controlled software-validation scenario and
+should not be interpreted as independent field-performance estimates.
+
+---
+
+## Important Validation Distinction
+
+Two forms of evidence should be distinguished when interpreting
+ClimateNetAI v2.2.
+
+### 1. Empirical Research Evidence
+
+The underlying research and RAC-5G development are grounded in actual
+5G and atmospheric field measurements collected during the twelve-month
+Abuja experiment.
+
+### 2. Software Functional Validation
+
+The v2.2 Telemetry Bridge was functionally validated using controlled
+simulated 5G observations.
+
+The simulator is a software test harness.
+
+It is **not** a substitute for independent real-time 5G field telemetry
+and is not presented as evidence of direct integration with MTN, Airtel,
+or another telecommunications operator.
+
+Direct real-time integration with compatible 5G measurement devices or
+operator telemetry remains future work.
+
+---
+
+## System Architecture
+
+The current ClimateNetAI architecture can be summarized as:
 
 ```text
-ClimateNetAI/
-│
-├── app.py
-├── modeling_dataset_v1.csv
-├── monthly_model_results.csv
-├── best_model_per_month_validated.csv
-├── requirements.txt
-│
-├── models/
-│   └── monthly_models/
-│
-├── docs/
-│   └── OWNERSHIP_AND_GOVERNANCE.md
-│
-├── AUTHORS.md
-├── CONTRIBUTING.md
-├── CITATION.cff
-├── LICENSE
-└── README.md
+                  LIVE CLIMATE PATHWAY
 
-## Reproducing the Results
+              Open-Meteo Climate API
+                       |
+                       v
+              Atmospheric Context
+          Temperature / Pressure / RH
+                       |
+                       v
+                 +-------------+
+                 | ClimateNetAI|
+                 +-------------+
+                       |
+                       v
+                    RAC-5G
+                       |
+              +--------+--------+
+              |                 |
+              v                 v
+       RSSI Prediction     Uncertainty
+              |                 |
+              +--------+--------+
+                       |
+                       v
+              Reliability Engine
+                       ^
+                       |
+              Telemetry Bridge
+                       ^
+                       |
+              Network Observation
 
-ClimateNetAI includes a reproducibility pipeline for validating the dataset,
-preparing the monthly modelling data, training reconstructed machine-learning
-models, comparing reproduced results with the archived historical results,
-and selecting the best-performing model for each month.
-
-The reproducibility workflow is implemented in:
-
-- `src/data_validation.py`
-- `src/preprocessing.py`
-- `src/train_models.py`
-- `src/evaluate_models.py`
-- `src/select_best_models.py`
-
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
+                       |
+                       v
+       Error + Coverage Monitoring
+                       |
+                       v
+            Degradation Detection
+                       |
+                       v
+          Controlled Adaptation
+                       |
+                       v
+          Recovery Verification
