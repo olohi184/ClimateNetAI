@@ -806,10 +806,6 @@ if app_mode == "RAC-5G Reliability Dashboard":
         {"icon": "!", "label": "Robust Error Threshold", "sub": "Degradation detection limit", "value": f"{threshold:.2f} dB", "tone": "orange"},
     ], columns=4)
 
-    st.caption(
-        "The thesis sensitivity study tested w = 3–7 and λ = 1.0–2.5. "
-        "The selected values are research settings, not universal telecom constants."
-    )
 
     total_obs = len(telemetry_df)
     if st.session_state.rac_adaptation_at is None:
