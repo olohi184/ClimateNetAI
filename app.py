@@ -479,9 +479,10 @@ if app_mode == "RAC-5G Reliability Dashboard":
     )
 
     st.info(
-        "RAC-5G is a research prototype. It combines climate-aware RSSI prediction "
-        "with calibrated uncertainty, telemetry feedback, model-health monitoring, "
-        "degradation detection, controlled adaptation, and recovery verification."
+        "ClimateNetAI transforms live climate conditions and network observations into "
+        "reliability-aware 5G intelligence, combining signal prediction, uncertainty "
+        "quantification, performance monitoring, degradation detection, adaptive modelling, "
+        "and recovery verification."
     )
 
     if not RAC_DATA_FILE.exists():
@@ -689,7 +690,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
         {"icon": "🗄️", "label": "Field observations", "sub": "Total samples used", "value": "252"},
         {"icon": "⚙️", "label": "Prediction Engine", "sub": "Model & regularization", "value": "Ridge α = 1.0", "tone": "purple"},
         {"icon": "🛡️", "label": "Nominal Interval", "sub": "Prediction uncertainty", "value": "90%", "tone": "green"},
-        {"icon": "🎯", "label": "Frozen Overall Coverage", "sub": "Empirical coverage · Experiment 7", "value": "87.3%", "tone": "orange"},
+        {"icon": "🎯", "label": "Frozen Overall Coverage", "sub": "Validated empirical coverage", "value": "87.3%", "tone": "orange"},
     ], columns=4)
 
     current = st.session_state.rac_prediction
@@ -697,18 +698,18 @@ if app_mode == "RAC-5G Reliability Dashboard":
     # Always show climate-source guidance, even when a prediction already exists.
     if climate_source == "Manual":
         st.info(
-            "Manual climate mode is active. Enter atmospheric conditions in the sidebar and "
-            "generate a RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
+            "Manual climate mode is active. Enter atmospheric conditions to generate a "
+            "reliability-aware 5G signal prediction with quantified uncertainty."
         )
     elif api_context is not None:
         st.success(
             "Live atmospheric conditions have been retrieved from Open-Meteo and are ready "
-            "for RAC-5G prediction. The uncertainty interval uses the frozen Experiment 7 interval width."
+            "for reliability-aware 5G signal prediction."
         )
     else:
         st.info(
-            "Live API mode is active. Use the Open-Meteo controls in the sidebar to retrieve "
-            "atmospheric conditions for RAC-5G prediction."
+            "Live API mode is active. Connect to Open-Meteo to retrieve current atmospheric "
+            "conditions for 5G signal prediction."
         )
 
     if current is None:
@@ -1770,5 +1771,3 @@ st.markdown(
     '<div class="footer-note">Research demonstration — interpret predictions together with model-validation results and study limitations.</div>',
     unsafe_allow_html=True
 )
-
-
