@@ -477,7 +477,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 Reliability-Aware Climate-Adaptive 5G Prediction Model
             </div>
             <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;font-size:.86rem;">
-                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.2 · Live Climate + Telemetry Bridge</span>
+                <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">v2.3 · RAC-5G + Reliability Boundary Engine</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">252 Field Observations</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">Abuja, Nigeria</span>
                 <span style="padding:.38rem .65rem;border-radius:999px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);">July 2024–June 2025</span>
@@ -540,6 +540,44 @@ if app_mode == "RAC-5G Reliability Dashboard":
     DEFAULT_WINDOW = 5
     DEFAULT_LAMBDA = 1.5
     DEFAULT_COVERAGE_FLOOR = 0.80
+
+    # Frozen Reliability Boundary Engine (RBE) configuration.
+    # These values come from the validated retrospective RBE experiment and
+    # are intentionally independent of the exploratory RAC-5G dashboard controls.
+    RBE_WINDOW = 5
+    RBE_ERROR_THRESHOLD_DB = 8.71
+    RBE_COVERAGE_FLOOR = 0.80
+    RBE_HALF_WIDTH_DB = 10.11
+
+    def compute_rbe_state(telemetry_records):
+        """Assign a prospective RBE state using completed PRIOR telemetry only."""
+        if len(telemetry_records) < RBE_WINDOW:
+            return {
+                "state": "WARM-UP",
+                "mae": np.nan,
+                "coverage": np.nan,
+                "n_prior": len(telemetry_records),
+            }
+
+        prior = pd.DataFrame(telemetry_records).tail(RBE_WINDOW)
+        prior_mae = float(prior["Absolute_Error_dB"].mean())
+        prior_coverage = float(prior["Interval_Covered"].mean())
+        error_fail = prior_mae > RBE_ERROR_THRESHOLD_DB
+        coverage_fail = prior_coverage < RBE_COVERAGE_FLOOR
+
+        if error_fail and coverage_fail:
+            state = "ABSTAIN"
+        elif error_fail or coverage_fail:
+            state = "CAUTION"
+        else:
+            state = "TRUST"
+
+        return {
+            "state": state,
+            "mae": prior_mae,
+            "coverage": prior_coverage,
+            "n_prior": RBE_WINDOW,
+        }
 
     # Reconstruct leakage-safe leave-one-month-out residuals for a historical
     # reference error distribution. This reproduces the frozen Ridge baseline.
@@ -692,6 +730,11 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "RH_pct": [rac_rh],
         })
         pred = float(st.session_state.rac_model.predict(x_new)[0])
+
+        # RBE is evaluated BEFORE the current observation is available.
+        # This preserves the no-leakage prospective decision rule.
+        rbe = compute_rbe_state(st.session_state.rac_telemetry)
+
         st.session_state.rac_prediction_id += 1
         st.session_state.rac_prediction = {
             "prediction_id": st.session_state.rac_prediction_id,
@@ -710,6 +753,10 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "prediction": pred,
             "lower": pred - FROZEN_HALF_WIDTH_DB,
             "upper": pred + FROZEN_HALF_WIDTH_DB,
+            "rbe_state": rbe["state"],
+            "rbe_prior_mae": rbe["mae"],
+            "rbe_prior_coverage": rbe["coverage"],
+            "rbe_prior_n": rbe["n_prior"],
         }
 
     st.subheader("1. Prediction Intelligence — Climate → RSSI → Uncertainty")
@@ -752,7 +799,41 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "but coverage varied strongly by month; the interval is therefore evidence, not a guarantee."
         )
 
-        st.subheader("2. Live Network Telemetry")
+        st.subheader("2. Reliability Boundary Engine — Selective Prediction")
+        rbe_state = current.get("rbe_state", "WARM-UP")
+        rbe_tone = (
+            "green" if rbe_state == "TRUST"
+            else "orange" if rbe_state == "CAUTION"
+            else "red" if rbe_state == "ABSTAIN"
+            else "purple"
+        )
+        rbe_mae = current.get("rbe_prior_mae", np.nan)
+        rbe_cov = current.get("rbe_prior_coverage", np.nan)
+        render_intel_cards([
+            {"icon": "🧭", "label": "RBE Decision", "sub": "Prospective reliability state", "value": rbe_state, "tone": rbe_tone},
+            {"icon": "📈", "label": "Prior-window MAE", "sub": "Previous 5 completed observations", "value": "—" if np.isnan(rbe_mae) else f"{rbe_mae:.2f} dB"},
+            {"icon": "🛡️", "label": "Prior-window Coverage", "sub": "Previous 5 completed observations", "value": "—" if np.isnan(rbe_cov) else f"{rbe_cov*100:.1f}%"},
+        ], columns=3)
+
+        if rbe_state == "TRUST":
+            st.success("RBE: TRUST — recent completed telemetry remains within both validated reliability criteria.")
+        elif rbe_state == "CAUTION":
+            st.warning("RBE: CAUTION — one validated reliability criterion has failed. Interpret this prediction cautiously.")
+        elif rbe_state == "ABSTAIN":
+            st.error("RBE: ABSTAIN — recent error and interval coverage both fall outside the validated reliability boundary. Do not treat this prediction as operationally supported.")
+        else:
+            st.info(
+                f"RBE warm-up: {current.get('rbe_prior_n', 0)}/{RBE_WINDOW} prior observations available. "
+                "A TRUST/CAUTION/ABSTAIN decision begins after five completed telemetry observations."
+            )
+
+        st.caption(
+            "Validated RBE research mode is frozen at w=5, error threshold=8.71 dB, "
+            "coverage floor=0.80, and conformal half-width=10.11 dB. The decision uses "
+            "only telemetry completed before the current prediction."
+        )
+
+        st.subheader("3. Live Network Telemetry")
         telemetry_source = st.radio(
             "Network Telemetry Source",
             ["Manual", "Telemetry Bridge"],
@@ -857,13 +938,16 @@ if app_mode == "RAC-5G Reliability Dashboard":
                 "Observed_RSSI_dBm": float(observed),
                 "Absolute_Error_dB": error,
                 "Interval_Covered": covered,
+                "RBE_State_Assigned": current.get("rbe_state", "WARM-UP"),
+                "RBE_Prior_MAE_dB": current.get("rbe_prior_mae", np.nan),
+                "RBE_Prior_Coverage": current.get("rbe_prior_coverage", np.nan),
             })
             st.session_state.rac_last_submitted_prediction_id = current["prediction_id"]
             if telemetry_source == "Telemetry Bridge":
                 st.session_state.rac_bridge_telemetry = None
             st.success("Network telemetry observation added. Generate a new prediction before submitting the next observation.")
 
-    st.subheader("3. Reliability Intelligence — Model Health & Degradation")
+    st.subheader("4. Reliability Intelligence — Model Health & Degradation")
     d1, d2, d3 = st.columns(3)
     window = d1.selectbox("Monitoring window (w)", [3, 5, 7], index=1)
     lam = d2.selectbox("Threshold multiplier (λ)", [1.0, 1.5, 2.0, 2.5], index=1)
@@ -929,7 +1013,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
     if not telemetry_df.empty:
         st.dataframe(telemetry_df, use_container_width=True, hide_index=True)
 
-    st.subheader("4. Adaptive Response — Controlled Adaptation & Recovery")
+    st.subheader("5. Adaptive Response — Controlled Adaptation & Recovery")
 
     # Verify recovery from POST-ADAPTATION telemetry only.
     post_mae = np.nan
@@ -1014,7 +1098,7 @@ if app_mode == "RAC-5G Reliability Dashboard":
     else:
         st.info("Adaptation status: NOT REQUIRED. RAC-5G retains the current model while monitoring continues.")
 
-    st.subheader("5. Validated Research Evidence")
+    st.subheader("6. Validated Research Evidence")
     evidence = pd.DataFrame({
         "Evidence": [
             "Static Ridge baseline",
