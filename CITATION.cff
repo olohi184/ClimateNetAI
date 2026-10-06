@@ -3,6 +3,7 @@ message: "If you use ClimateNetAI in your research, please cite this software."
 
 title: "ClimateNetAI: Reliability-Aware Climate-Adaptive 5G Intelligence"
 version: 2.3.0
+doi: "10.5281/zenodo.23194137"
 date-released: "2026-10-06"
 type: software
 license: MIT
