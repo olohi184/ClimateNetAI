@@ -1,0 +1,65 @@
+name: RBE and Streamlit Tests
+
+on:
+  push:
+    branches:
+      - feature/rbe-selective-prediction
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rbe-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Reliability Boundary Engine tests
+        run: python -m unittest discover -s tests -p "test_rbe.py" -v
+
+  streamlit-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install application dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile application modules
+        run: python -m py_compile app.py rbe.py
+
+      - name: Start Streamlit application
+        run: |
+          streamlit run app.py --server.headless true --server.port 8501 > /tmp/climatenetai.log 2>&1 &
+          echo $! > /tmp/climatenetai.pid
+
+      - name: Verify Streamlit health endpoint
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://localhost:8501/_stcore/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/climatenetai.log
+          exit 1
+
+      - name: Show Streamlit log on failure
+        if: failure()
+        run: cat /tmp/climatenetai.log || true
