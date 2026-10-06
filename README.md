@@ -2,12 +2,12 @@
 
 ## Reliability-Aware Climate-Adaptive 5G Intelligence
 
-![Version](https://img.shields.io/badge/version-2.2-blue)
+![Version](https://img.shields.io/badge/version-2.3-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Status](https://img.shields.io/badge/status-research%20prototype-orange)
 
 **Founder, Project Originator and Lead Developer:** Olohimai Juliet Michael  
-**Current Version:** 2.2  
+**Current Version:** 2.3  
 **Status:** Research Prototype
 
 ---
@@ -30,9 +30,9 @@ and post-adaptation recovery verification.
 
 ---
 
-## ClimateNetAI v2.2
+## ClimateNetAI v2.3
 
-ClimateNetAI v2.2 represents a research-to-software translation of
+ClimateNetAI v2.3 represents a research-to-software translation of
 doctoral research investigating machine-learning prediction of 5G signal
 behaviour under atmospheric variability.
 
@@ -171,7 +171,7 @@ and support subsequent reliability monitoring.
 
 ## Network Telemetry Bridge
 
-ClimateNetAI v2.2 introduces a **Telemetry Bridge** that allows network
+ClimateNetAI v2.3 retains the **Telemetry Bridge** that allows network
 observations to be supplied independently to the application.
 
 Conceptually:
@@ -225,6 +225,40 @@ The current default rolling monitoring window is:
 **5 observations**
 
 ---
+
+## Reliability Boundary Engine (RBE)
+
+ClimateNetAI v2.3 adds a **Reliability Boundary Engine (RBE)** as a
+selective-prediction layer above the existing RAC-5G telemetry monitor.
+
+RBE does not replace the RAC-5G **Stable / Warning / Degraded** model-health
+states. Those states continue to support degradation detection, adaptation,
+and recovery. RBE answers a different operational question: whether the
+**current prediction** is sufficiently supported by recent completed
+telemetry to be presented as **TRUST**, **CAUTION**, or **ABSTAIN**.
+
+The validated research configuration is frozen at:
+
+- monitoring window: **5 completed observations**;
+- robust error threshold: **8.71 dB**;
+- empirical coverage floor: **0.80**; and
+- conformal prediction-interval half-width: **10.11 dB**.
+
+The first five observations form a warm-up period. For every subsequent
+prediction, RBE computes its decision from the **preceding five completed
+telemetry observations only**. The current observed RSSI is not available
+to the RBE when that prediction is classified, preventing outcome leakage.
+
+Decision rule:
+
+- **TRUST** — neither recent-error nor recent-coverage criterion fails;
+- **CAUTION** — exactly one criterion fails;
+- **ABSTAIN** — both criteria fail.
+
+In retrospective temporal validation, RBE states separated prediction risk:
+TRUST predictions had lower error and higher interval coverage than ABSTAIN
+predictions. This is evidence of risk stratification within the study data,
+not a guarantee that every TRUST prediction will be accurate.
 
 ## Degradation Detection
 
