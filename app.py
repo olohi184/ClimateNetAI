@@ -11,6 +11,14 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from rbe import (
+    RBE_COVERAGE_FLOOR,
+    RBE_ERROR_THRESHOLD_DB,
+    RBE_HALF_WIDTH_DB,
+    RBE_WINDOW,
+    compute_rbe_state,
+)
+
 
 # ------------------------------------------------------------
 # PAGE CONFIGURATION
@@ -540,44 +548,6 @@ if app_mode == "RAC-5G Reliability Dashboard":
     DEFAULT_WINDOW = 5
     DEFAULT_LAMBDA = 1.5
     DEFAULT_COVERAGE_FLOOR = 0.80
-
-    # Frozen Reliability Boundary Engine (RBE) configuration.
-    # These values come from the validated retrospective RBE experiment and
-    # are intentionally independent of the exploratory RAC-5G dashboard controls.
-    RBE_WINDOW = 5
-    RBE_ERROR_THRESHOLD_DB = 8.71
-    RBE_COVERAGE_FLOOR = 0.80
-    RBE_HALF_WIDTH_DB = 10.11
-
-    def compute_rbe_state(telemetry_records):
-        """Assign a prospective RBE state using completed PRIOR telemetry only."""
-        if len(telemetry_records) < RBE_WINDOW:
-            return {
-                "state": "WARM-UP",
-                "mae": np.nan,
-                "coverage": np.nan,
-                "n_prior": len(telemetry_records),
-            }
-
-        prior = pd.DataFrame(telemetry_records).tail(RBE_WINDOW)
-        prior_mae = float(prior["Absolute_Error_dB"].mean())
-        prior_coverage = float(prior["Interval_Covered"].mean())
-        error_fail = prior_mae > RBE_ERROR_THRESHOLD_DB
-        coverage_fail = prior_coverage < RBE_COVERAGE_FLOOR
-
-        if error_fail and coverage_fail:
-            state = "ABSTAIN"
-        elif error_fail or coverage_fail:
-            state = "CAUTION"
-        else:
-            state = "TRUST"
-
-        return {
-            "state": state,
-            "mae": prior_mae,
-            "coverage": prior_coverage,
-            "n_prior": RBE_WINDOW,
-        }
 
     # Reconstruct leakage-safe leave-one-month-out residuals for a historical
     # reference error distribution. This reproduces the frozen Ridge baseline.
