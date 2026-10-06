@@ -2,9 +2,8 @@ cff-version: 1.2.0
 message: "If you use ClimateNetAI in your research, please cite this software."
 
 title: "ClimateNetAI: Reliability-Aware Climate-Adaptive 5G Intelligence"
-version: 2.2.0
-doi: "10.5281/zenodo.23091832"
-date-released: "2026-10-02"
+version: 2.3.0
+date-released: "2026-10-06"
 type: software
 license: MIT
 
@@ -12,21 +11,26 @@ authors:
   - family-names: "Michael"
     given-names: "Olohimai Juliet"
 
-repository-code: "https://github.com/olohi184/-ClimateNetAI-"
+repository-code: "https://github.com/olohi184/ClimateNetAI"
 url: "https://climatenetai.streamlit.app"
 
 abstract: >
   ClimateNetAI is a climate-aware and reliability-aware machine-learning
   research platform for 5G signal-strength prediction under atmospheric
-  variability. Version 2.2 implements the RAC-5G
-  (Reliability-Aware Climate-Adaptive 5G) framework, integrating
-  climate-aware RSSI prediction, uncertainty quantification, live
-  atmospheric-data integration, network telemetry ingestion, rolling
-  reliability monitoring, degradation detection, controlled adaptation,
-  and post-adaptation recovery verification. The underlying research is
-  grounded in empirical 5G and atmospheric field measurements, while
-  the v2.2 telemetry workflow has been functionally validated using
-  controlled simulated 5G observations.
+  variability. Version 2.3 extends the RAC-5G
+  (Reliability-Aware Climate-Adaptive 5G) framework with a Reliability
+  Boundary Engine (RBE), a telemetry-aware selective-prediction mechanism
+  that assigns prospective TRUST, CAUTION, or ABSTAIN states using only
+  completed prior telemetry. The frozen RBE research configuration uses
+  a five-observation monitoring window, an 8.71 dB robust error threshold,
+  a 0.80 operational coverage floor, and a 10.11 dB conformal half-width.
+  The current prediction outcome is excluded from its own reliability-state
+  assignment to prevent outcome leakage. RBE complements, rather than
+  replaces, the existing RAC-5G model-health, degradation-detection,
+  controlled-adaptation, and recovery-verification workflow. Version 2.3
+  includes automated RBE unit tests and Streamlit application smoke testing.
+  TRUST denotes an empirically supported operating state under the validated
+  criteria and is not a guarantee of prediction correctness.
 
 keywords:
   - machine learning
@@ -34,8 +38,9 @@ keywords:
   - wireless communications
   - RSSI
   - climate-aware AI
-  - trustworthy AI
   - reliability-aware machine learning
+  - selective prediction
+  - uncertainty quantification
   - atmospheric variability
   - adaptive systems
   - climate-resilient digital infrastructure
