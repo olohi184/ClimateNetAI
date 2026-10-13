@@ -1,0 +1,32 @@
+name: Live 5G Observation Validation
+
+on:
+  push:
+    branches:
+      - feature/live-5g-integration
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observation-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile new ingestion and Streamlit modules
+        run: |
+          python -m py_compile src/live_observations.py src/live_csv.py pages/Live_5G_Observations.py
+
+      - name: Run all unit tests
+        run: python -m unittest discover -s tests -v
