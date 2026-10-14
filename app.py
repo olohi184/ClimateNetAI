@@ -2,6 +2,8 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import json
+import uuid
+from src.prediction_logging import build_prediction_log_entry
 
 import joblib
 import numpy as np
@@ -587,6 +589,18 @@ if app_mode == "RAC-5G Reliability Dashboard":
     if "rac_bridge_telemetry" not in st.session_state:
         st.session_state.rac_bridge_telemetry = None
 
+    if "rac_prediction_log" not in st.session_state:
+        st.session_state.rac_prediction_log = []
+
+    st.sidebar.subheader("External pilot evaluation context")
+    pilot_group = st.sidebar.selectbox(
+        "Intended observation group (experimental)",
+        ["Abuja / MTN", "Abuja / Airtel", "Lagos / Airtel"],
+        key="rac_pilot_group",
+        help="A context label only. It does not validate generalisation to this city/operator.",
+    )
+    pilot_city, pilot_operator = pilot_group.split(" / ")
+
     st.sidebar.divider()
     st.sidebar.subheader("RAC-5G Climate Context")
 
@@ -706,8 +720,9 @@ if app_mode == "RAC-5G Reliability Dashboard":
         rbe = compute_rbe_state(st.session_state.rac_telemetry)
 
         st.session_state.rac_prediction_id += 1
+        prediction_uuid = str(uuid.uuid4())
         st.session_state.rac_prediction = {
-            "prediction_id": st.session_state.rac_prediction_id,
+            "prediction_id": prediction_uuid,
             "temperature": rac_temp,
             "pressure": rac_pressure,
             "humidity": rac_rh,
@@ -728,6 +743,28 @@ if app_mode == "RAC-5G Reliability Dashboard":
             "rbe_prior_coverage": rbe["coverage"],
             "rbe_prior_n": rbe["n_prior"],
         }
+
+        # Log the model output at generation time, before any observation is used.
+        st.session_state.rac_prediction_log.append(
+            build_prediction_log_entry(
+                st.session_state.rac_prediction, pilot_city, pilot_operator
+            )
+        )
+
+    if st.session_state.rac_prediction_log:
+        st.download_button(
+            "⬇️ Export RAC-5G model-generated prediction log (CSV)",
+            pd.DataFrame(st.session_state.rac_prediction_log).to_csv(index=False),
+            file_name="climatenetai_rac5g_prediction_log.csv",
+            mime="text/csv",
+            key="rac_export_prediction_log",
+            help="Import this log into Live 5G Observations for candidate pairing. "
+                 "Exported predictions are experimental, not externally validated.",
+        )
+        st.caption(
+            "Prediction logs exist only in this browser session. Download before "
+            "refreshing or restarting. City/operator are evaluation labels, not model features."
+        )
 
     st.subheader("1. Prediction Intelligence — Climate → RSSI → Uncertainty")
     render_intel_cards([
