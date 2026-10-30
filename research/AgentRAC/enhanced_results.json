@@ -1,0 +1,70 @@
+{
+  "study_type": "retrospective_offline_replay_and_synthetic_policy_stress_tests",
+  "train_months": [
+    "Jul 2024",
+    "Aug 2024",
+    "Sep 2024",
+    "Oct 2024",
+    "Nov 2024",
+    "Dec 2024",
+    "Jan 2025",
+    "Feb 2025"
+  ],
+  "test_months": [
+    "Mar 2025",
+    "Apr 2025",
+    "May 2025",
+    "Jun 2025"
+  ],
+  "train_n": 168,
+  "test_n": 84,
+  "holdout_r2": -0.6475887184371638,
+  "holdout_mae_db": 4.197134820465986,
+  "policies": {
+    "baseline": {
+      "counts": {
+        "ACCEPT": 84
+      },
+      "accepted_n": 84,
+      "acceptance_rate": 1,
+      "accepted_mae_db": 4.197134820465986,
+      "accepted_high_error_rate": 0.17857142857142858
+    },
+    "rbe": {
+      "counts": {
+        "ACCEPT": 69,
+        "ABSTAIN": 15
+      },
+      "accepted_n": 69,
+      "acceptance_rate": 0.8214285714285714,
+      "accepted_mae_db": 3.313784501490593,
+      "accepted_high_error_rate": 0.10144927536231885
+    },
+    "agent": {
+      "counts": {
+        "ACCEPT": 69,
+        "ABSTAIN": 8,
+        "ESCALATE": 7
+      },
+      "accepted_n": 69,
+      "acceptance_rate": 0.8214285714285714,
+      "accepted_mae_db": 3.313784501490593,
+      "accepted_high_error_rate": 0.10144927536231885
+    }
+  },
+  "stress_scenario_counts": "{('out_of_range_temperature', 'ABSTAIN'): 8, ('out_of_range_temperature', 'ESCALATE'): 76, ('stale_context', 'ABSTAIN'): 84, ('unverified_provenance', 'ABSTAIN'): 84}",
+  "policy_checks": {
+    "unverified_sources_always_abstain": true,
+    "stale_context_always_abstain": true,
+    "out_of_range_never_accepted": true,
+    "no_automatic_execution": true,
+    "all_nonaccept_decisions_require_approval": true
+  },
+  "limitations": [
+    "No independently verified real-time deployment",
+    "Representative records lack complete timestamps",
+    "Stress tests validate programmed rules, not improved field safety",
+    "Agent is deterministic tool orchestration, not an LLM",
+    "Fixed RBE thresholds inherited from prior work; prospective recalibration not performed"
+  ]
+}
